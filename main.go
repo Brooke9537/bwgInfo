@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -17,11 +18,24 @@ func Decimal(value float64) float64 {
 	return value
 }
 
+// Usage 帮助
+func Usage() {
+	fmt.Println("Usage: bwgInfo <veid> <api_key>")
+}
+
 // getHostInfo 获取kiwivm api
 func getHostInfo() string {
 	Time1 := time.Now().UnixNano()
+	args := os.Args
+	if args == nil || len(args) != 3 {
+		Usage()
 
-	url := "https://api.64clouds.com/v1/getServiceInfo?veid=1031209&api_key=private_ne0HzIskQUsIwUJtIIrzKlX6"
+		return "err -- No veid or api_key!"
+	}
+	var veid string = args[1]
+	var apiKey string = args[2]
+
+	url := "https://api.64clouds.com/v1/getServiceInfo?veid=" + veid + "&api_key=" + apiKey
 	method := "GET"
 
 	client := &http.Client{}
@@ -37,6 +51,11 @@ func getHostInfo() string {
 	defer res.Body.Close()
 	Time2 := time.Now().UnixNano()
 	hostInfo, err := ioutil.ReadAll(res.Body)
+	errmessage, err := jsonparser.GetString(hostInfo, "message")
+	if err == nil {
+		fmt.Println("err -- " + errmessage)
+		return "err -- " + errmessage
+	}
 	hostname, err := jsonparser.GetString(hostInfo, "hostname")
 	dataNextReset, err := jsonparser.GetInt(hostInfo, "data_next_reset")
 	dataCounter, err := jsonparser.GetFloat(hostInfo, "data_counter")
